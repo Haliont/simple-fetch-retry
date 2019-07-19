@@ -19,9 +19,7 @@ export function fetchRetry(url: string, retryParams: RetryParams, options = {}) 
                 .then(response => resolve(response))
                 .catch(async (error) => {
                     if (counter < retries) {
-                        await delay(retryDelay)
-                        counter++
-                        callFetch()
+                        retry()
                     } else {
                         throw new Error(`Не удалось загрузить данные | ${error.message}`)
                     }
@@ -29,6 +27,13 @@ export function fetchRetry(url: string, retryParams: RetryParams, options = {}) 
         }
 
         callFetch()
+
+        function retry() {
+            setTimeout(() => {
+                counter++
+                callFetch()
+            }, retryDelay)
+        }
     })
 
     function delay(time: number) {
