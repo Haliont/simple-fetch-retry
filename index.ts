@@ -1,42 +1,28 @@
 interface RetryParams {
-    retries: number
-    retryDelay: number
+  retries?: number
+  retryDelay?: number
 }
 
-export function fetchRetry(url: string, retryParams: RetryParams, options = {}) {
-    // default retryParams
-    let retries = 3
-    let retryDelay = 800
+const delay = (time: number) => new Promise(resolve => setTimeout(resolve, time));
 
-    // custom retryParams
-    if (retryParams && retryParams.retries) retries = retryParams.retries
-    if (retryParams && retryParams.retryDelay) retryDelay = retryParams.retryDelay
-    let counter = 0
+export function fetchRetry(url: string, retryParams: RetryParams = {}, options = {}) {
+  const { retries = 3, retryDelay = 800 } = retryParams
+  if (retries < 1) throw new Error('Параметр retries должен быть больше 0');
 
-    return new Promise(resolve => {
-        function callFetch() {
-            fetch(url, options)
-                .then(response => resolve(response))
-                .catch(async (error) => {
-                    if (counter < retries) {
-                        retry()
-                    } else {
-                        throw new Error(`Не удалось загрузить данные | ${error.message}`)
-                    }
-                })
-        }
+  return new Promise(resolve => {
+      function callFetch(attempts: number) {
+        fetch(url, options)
+          .then(resolve)
+          .catch(async (error: Error) => {
+              if (error && attempts === 0) {
+                throw new Error(`Не удалось загрузить данные | ${error.message}`)
+              }
 
-        callFetch()
+              await delay(retryDelay)
+              callFetch(attempts - 1)
+          })
+      }
 
-        function retry() {
-            setTimeout(() => {
-                counter++
-                callFetch()
-            }, retryDelay)
-        }
-    })
-
-    function delay(time: number) {
-        return new Promise(resolve => setTimeout(resolve, time));
-    }
+      callFetch(retries - 1)
+  })
 }
