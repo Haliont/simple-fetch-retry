@@ -14,7 +14,7 @@ export function fetchRetry(url: string, retryParams: RetryParams = {}, options =
         fetch(url, options)
           .then(resolve)
           .catch(async (error: Error) => {
-              if (error && attempts === 0) {
+              if (attempts === 0) {
                 throw new Error(`Не удалось загрузить данные | ${error.message}`)
               }
 
